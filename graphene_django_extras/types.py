@@ -387,11 +387,7 @@ class DjangoSerializerType(ObjectType):
                         "https://github.com/graphql-python/graphene/blob/2.0/UPGRADE-v2.0.md#mutation-input"
                     ).format(name=cls.__name__)
                 )
-        if input_class:
-            arguments = props(input_class)
-        else:
-            arguments = {}
-
+        arguments = props(input_class) if input_class else {}
         registry = get_global_registry()
 
         factory_kwargs = {
@@ -495,8 +491,9 @@ class DjangoSerializerType(ObjectType):
                 sub_data = data.pop(field, None)
                 if sub_data:
                     serialized_data = cls._meta.nested_fields[field](
-                        data=sub_data, many=True if type(sub_data) == list else False
+                        data=sub_data, many=type(sub_data) == list
                     )
+
                     ok, result = cls.save(serialized_data, root, info)
                     if not ok:
                         return cls.get_errors(result)
@@ -557,22 +554,7 @@ class DjangoSerializerType(ObjectType):
 
         pk = data.pop("id")
         old_obj = get_Object_or_None(cls._meta.model, pk=pk)
-        if old_obj:
-            nested_objs = cls.manage_nested_fields(data, root, info)
-            serializer = cls._meta.serializer_class(
-                old_obj,
-                data=data,
-                partial=True,
-                **cls.get_serializer_kwargs(root, info, **kwargs),
-            )
-
-            ok, obj = cls.save(serializer, root, info)
-            if not ok:
-                return cls.get_errors(obj)
-            elif nested_objs:
-                [getattr(obj, field).add(*objs) for field, objs in nested_objs.items()]
-            return cls.perform_mutate(obj, info)
-        else:
+        if not old_obj:
             return cls.get_errors(
                 [
                     ErrorType(
@@ -585,6 +567,21 @@ class DjangoSerializerType(ObjectType):
                     )
                 ]
             )
+
+        nested_objs = cls.manage_nested_fields(data, root, info)
+        serializer = cls._meta.serializer_class(
+            old_obj,
+            data=data,
+            partial=True,
+            **cls.get_serializer_kwargs(root, info, **kwargs),
+        )
+
+        ok, obj = cls.save(serializer, root, info)
+        if not ok:
+            return cls.get_errors(obj)
+        elif nested_objs:
+            [getattr(obj, field).add(*objs) for field, objs in nested_objs.items()]
+        return cls.perform_mutate(obj, info)
 
     @classmethod
     def save(cls, serialized_obj, root, info, **kwargs):

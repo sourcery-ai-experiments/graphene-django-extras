@@ -57,10 +57,7 @@ FORMATS_MAP = {
 
 
 def str_in_dict_keys(s, d):
-    for k in d:
-        if s in k:
-            return True
-    return False
+    return any(s in k for k in d)
 
 
 def _combine_date_time(d, t):
@@ -101,23 +98,22 @@ def _format_relativedelta(rdelta, full=False, two_days=False, original_dt=None):
     flag = None
 
     if two_days and original_dt:
-        if rdelta.years == 0 and rdelta.months == 0:
-            days = rdelta.days
-            if days == 1:
-                return None, "Tomorrow"
-            if days == -1:
-                return None, "Yesterday"
-            if days == 0:
-                full = False
-            else:
-                return None, original_dt.strftime("%b %d, %Y")
-        else:
+        if rdelta.years != 0 or rdelta.months != 0:
             return None, original_dt.strftime("%b %d, %Y")
 
+        days = rdelta.days
+        if days == 1:
+            return None, "Tomorrow"
+        if days == -1:
+            return None, "Yesterday"
+        if days == 0:
+            full = False
+        else:
+            return None, original_dt.strftime("%b %d, %Y")
     for k, v in rdelta.__dict__.items():
         if k in keys and v != 0:
             if flag is None:
-                flag = True if v > 0 else False
+                flag = v > 0
             key = k
             abs_v = abs(v)
             if abs_v == 1:
@@ -126,7 +122,7 @@ def _format_relativedelta(rdelta, full=False, two_days=False, original_dt=None):
                 return flag, "{} {}".format(abs_v, key)
             else:
                 result.append("{} {}".format(abs_v, key))
-    if len(result) == 0:
+    if not result:
         return None, "Now" if two_days else None, "just now"
     if len(result) > 1:
         temp = result.pop()
@@ -139,30 +135,32 @@ def _format_relativedelta(rdelta, full=False, two_days=False, original_dt=None):
 
 def _format_time_ago(dt, now=None, full=False, ago_in=False, two_days=False):
 
-    if not isinstance(dt, timedelta):
-        if now is None:
-            now = timezone.localtime(
-                timezone=timezone.get_fixed_timezone(-int(t.timezone / 60))
-            )
+    if isinstance(dt, timedelta):
+        return
 
-        original_dt = dt
-        dt = _parse(dt)
-        now = _parse(now)
+    if now is None:
+        now = timezone.localtime(
+            timezone=timezone.get_fixed_timezone(-int(t.timezone / 60))
+        )
 
-        if dt is None:
-            raise ValueError(
-                "The parameter `dt` should be datetime timedelta, or datetime formatted string."
-            )
-        if now is None:
-            raise ValueError(
-                "the parameter `now` should be datetime, or datetime formatted string."
-            )
+    original_dt = dt
+    dt = _parse(dt)
+    now = _parse(now)
 
-        result = relativedelta.relativedelta(dt, now)
-        flag, result = _format_relativedelta(result, full, two_days, original_dt)
-        if ago_in and flag is not None:
-            result = "in {}".format(result) if flag else "{} ago".format(result)
-        return result
+    if dt is None:
+        raise ValueError(
+            "The parameter `dt` should be datetime timedelta, or datetime formatted string."
+        )
+    if now is None:
+        raise ValueError(
+            "the parameter `now` should be datetime, or datetime formatted string."
+        )
+
+    result = relativedelta.relativedelta(dt, now)
+    flag, result = _format_relativedelta(result, full, two_days, original_dt)
+    if ago_in and flag is not None:
+        result = "in {}".format(result) if flag else "{} ago".format(result)
+    return result
 
 
 def _format_dt(dt, format="default"):
@@ -189,41 +187,39 @@ def _format_dt(dt, format="default"):
     if format in FORMATS_MAP:
         return dt.strftime(FORMATS_MAP[format])
 
-    else:
-        temp_format = ""
-        translate_format_list = []
-        for char in format:
-            if not char.isalpha():
-                if temp_format != "":
-                    translate_format_list.append(FORMATS_MAP.get(temp_format, ""))
-                    temp_format = ""
-                translate_format_list.append(char)
-            else:
-                if str_in_dict_keys("{}{}".format(temp_format, char), FORMATS_MAP):
-                    temp_format = "{}{}".format(temp_format, char)
-                else:
-                    if temp_format != "":
-                        if temp_format in FORMATS_MAP:
-                            translate_format_list.append(
-                                FORMATS_MAP.get(temp_format, "")
-                            )
-                        else:
-                            return None
-                    if str_in_dict_keys(char, FORMATS_MAP):
-                        temp_format = char
-                    else:
-                        return None
-
-        if temp_format != "":
-            if temp_format in FORMATS_MAP:
+    temp_format = ""
+    translate_format_list = []
+    for char in format:
+        if not char.isalpha():
+            if temp_format != "":
                 translate_format_list.append(FORMATS_MAP.get(temp_format, ""))
+                temp_format = ""
+            translate_format_list.append(char)
+        elif str_in_dict_keys("{}{}".format(temp_format, char), FORMATS_MAP):
+            temp_format = "{}{}".format(temp_format, char)
+        else:
+            if temp_format != "":
+                if temp_format in FORMATS_MAP:
+                    translate_format_list.append(
+                        FORMATS_MAP.get(temp_format, "")
+                    )
+                else:
+                    return None
+            if str_in_dict_keys(char, FORMATS_MAP):
+                temp_format = char
             else:
                 return None
 
-        format_result = "".join(translate_format_list)
-        if format_result:
-            return dt.strftime("".join(translate_format_list))
-        return None
+    if temp_format != "":
+        if temp_format in FORMATS_MAP:
+            translate_format_list.append(FORMATS_MAP.get(temp_format, ""))
+        else:
+            return None
+
+    format_result = "".join(translate_format_list)
+    if format_result:
+        return dt.strftime("".join(translate_format_list))
+    return None
 
 
 class DateGraphQLDirective(BaseExtraGraphQLDirective):
@@ -244,7 +240,7 @@ class DateGraphQLDirective(BaseExtraGraphQLDirective):
         format_argument = [
             arg for arg in directive.arguments if arg.name.value == "format"
         ]
-        format_argument = format_argument[0] if len(format_argument) > 0 else None
+        format_argument = format_argument[0] if format_argument else None
 
         custom_format = format_argument.value.value if format_argument else "default"
         dt = _parse(value)

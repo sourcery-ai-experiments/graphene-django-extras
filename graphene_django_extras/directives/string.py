@@ -66,12 +66,12 @@ class Base64GraphQLDirective(BaseExtraGraphQLDirective):
             return None
 
         op_argument = [arg for arg in directive.arguments if arg.name.value == "op"]
-        op_argument = op_argument[0] if len(op_argument) > 0 else "encode"
+        op_argument = op_argument[0] if op_argument else "encode"
 
         if op_argument in ("decode", "encode"):
             if op_argument == "decode":
                 value = base64.urlsafe_b64decode(str(value).encode("ascii"))
-            if op_argument == "encode":
+            elif op_argument == "encode":
                 value = base64.urlsafe_b64encode(str(value).encode("ascii"))
             value = value.decode("ascii") if six.PY3 else value
 
@@ -215,9 +215,7 @@ class StripGraphQLDirective(BaseExtraGraphQLDirective):
         chars_argument = [
             arg for arg in directive.arguments if arg.name.value == "chars"
         ]
-        chars_argument = (
-            chars_argument[0].value.value if len(chars_argument) > 0 else " "
-        )
+        chars_argument = chars_argument[0].value.value if chars_argument else " "
 
         value = value if isinstance(value, six.string_types) else str(value)
         return value.strip(chars_argument)
@@ -258,15 +256,17 @@ class CenterGraphQLDirective(BaseExtraGraphQLDirective):
             arg for arg in directive.arguments if arg.name.value == "width"
         ]
         width_argument = (
-            width_argument[0].value.value if len(width_argument) > 0 else len(value)
+            width_argument[0].value.value if width_argument else len(value)
         )
+
 
         fillchar_argument = [
             arg for arg in directive.arguments if arg.name.value == "fillchar"
         ]
         fillchar_argument = (
-            fillchar_argument[0].value.value if len(fillchar_argument) > 0 else " "
+            fillchar_argument[0].value.value if fillchar_argument else " "
         )
+
 
         value = value if isinstance(value, six.string_types) else str(value)
         return value.center(int(width_argument), fillchar_argument)
@@ -297,17 +297,15 @@ class ReplaceGraphQLDirective(BaseExtraGraphQLDirective):
     @staticmethod
     def resolve(value, directive, root, info, **kwargs):
         old_argument = [arg for arg in directive.arguments if arg.name.value == "old"]
-        old_argument = old_argument[0].value.value if len(old_argument) > 0 else None
+        old_argument = old_argument[0].value.value if old_argument else None
 
         new_argument = [arg for arg in directive.arguments if arg.name.value == "new"]
-        new_argument = new_argument[0].value.value if len(new_argument) > 0 else None
+        new_argument = new_argument[0].value.value if new_argument else None
 
         count_argument = [
             arg for arg in directive.arguments if arg.name.value == "count"
         ]
-        count_argument = (
-            count_argument[0].value.value if len(count_argument) > 0 else -1
-        )
+        count_argument = count_argument[0].value.value if count_argument else -1
 
         value = value if isinstance(value, six.string_types) else str(value)
         return value.replace(old_argument, new_argument, int(count_argument))

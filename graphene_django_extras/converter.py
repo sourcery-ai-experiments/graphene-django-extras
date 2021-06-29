@@ -64,8 +64,7 @@ def get_choices(choices):
     converted_names = []
     for value, help_text in choices:
         if isinstance(help_text, (tuple, list)):
-            for choice in get_choices(help_text):
-                yield choice
+            yield from get_choices(help_text)
         else:
             name = convert_choice_name(value)
             while name in converted_names:
@@ -323,25 +322,24 @@ def convert_field_to_list_or_connection(
                 required=is_required(field) and input_flag == "create",
                 description=field.help_text or field.verbose_name,
             )
+        _type = registry.get_type_for_model(model, for_input=input_flag)
+        if not _type:
+            return
+        elif input_flag and nested_field:
+            return DjangoListField(_type)
+        elif _type._meta.filter_fields or _type._meta.filterset_class:
+            return DjangoFilterListField(
+                _type,
+                required=is_required(field) and input_flag == "create",
+                description=field.help_text or field.verbose_name,
+                filterset_class=_type._meta.filterset_class,
+            )
         else:
-            _type = registry.get_type_for_model(model, for_input=input_flag)
-            if not _type:
-                return
-            elif input_flag and nested_field:
-                return DjangoListField(_type)
-            elif _type._meta.filter_fields or _type._meta.filterset_class:
-                return DjangoFilterListField(
-                    _type,
-                    required=is_required(field) and input_flag == "create",
-                    description=field.help_text or field.verbose_name,
-                    filterset_class=_type._meta.filterset_class,
-                )
-            else:
-                return DjangoListField(
-                    _type,
-                    required=is_required(field) and input_flag == "create",
-                    description=field.help_text or field.verbose_name,
-                )
+            return DjangoListField(
+                _type,
+                required=is_required(field) and input_flag == "create",
+                description=field.help_text or field.verbose_name,
+            )
 
     return Dynamic(dynamic_type)
 
@@ -357,22 +355,21 @@ def convert_many_rel_to_djangomodel(
     def dynamic_type():
         if input_flag and not nested_field:
             return DjangoListField(ID)
+        _type = registry.get_type_for_model(model, for_input=input_flag)
+        if not _type:
+            return
+        elif input_flag and nested_field:
+            return DjangoListField(_type)
+        elif _type._meta.filter_fields or _type._meta.filterset_class:
+            return DjangoFilterListField(
+                _type,
+                required=is_required(field) and input_flag == "create",
+                filterset_class=_type._meta.filterset_class,
+            )
         else:
-            _type = registry.get_type_for_model(model, for_input=input_flag)
-            if not _type:
-                return
-            elif input_flag and nested_field:
-                return DjangoListField(_type)
-            elif _type._meta.filter_fields or _type._meta.filterset_class:
-                return DjangoFilterListField(
-                    _type,
-                    required=is_required(field) and input_flag == "create",
-                    filterset_class=_type._meta.filterset_class,
-                )
-            else:
-                return DjangoListField(
-                    _type, required=is_required(field) and input_flag == "create"
-                )
+            return DjangoListField(
+                _type, required=is_required(field) and input_flag == "create"
+            )
 
     return Dynamic(dynamic_type)
 
