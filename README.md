@@ -683,3 +683,8 @@ You can use this shortcuts too:
 
 #### v0.0.1-beta.4:
     1. First commit.
+
+# To build the image
+- put the required package under the RUN section in your image and run the following command: 
+- docker build -t <image_name> -f <filenmae> . 
+- here , image_name is name of your image you give and filename is name of your file of image.
