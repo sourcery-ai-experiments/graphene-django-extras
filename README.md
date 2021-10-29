@@ -684,7 +684,8 @@ You can use this shortcuts too:
 #### v0.0.1-beta.4:
     1. First commit.
 
-# To build the image
-- put the required package under the RUN section in your image and run the following command: 
-- docker build -t <image_name> -f <filenmae> . 
-- here , image_name is name of your image you give and filename is name of your file of image.
+## To build the base Image
+- Put the required package under the RUN section in your image and run the following command: 
+- docker build -t <image_name> -f <file_name> . 
+- here  image_name is name of your new image you give and file_name is name of your file in which the image is written. 
+- this image will be your base image and further it will be use in Dockerfile if present and in jenkinsfile. 
