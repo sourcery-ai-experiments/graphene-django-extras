@@ -684,8 +684,57 @@ You can use this shortcuts too:
 #### v0.0.1-beta.4:
     1. First commit.
 
-## To build the base Image
-- Put the required package under the RUN section in your image and run the following command: 
-- docker build -t <image_name> -f <file_name> . 
-- here  image_name is name of your new image you give and file_name is name of your file in which the image is written. 
-- this image will be your base image and further it will be use in Dockerfile if present and in jenkinsfile. 
+## To Create the Image:
+* first add a base image in your Dockerfile , to add the base image we have a FROM keyword 
+  for this.
+  eg. `FROM quarticai/python:3.9.5-slim-base`
+  Here quarticai/python:3.9.5-slim-base is a base image for your Docker image.
+
+* If you want to add a file as requirements.txt file in Dockerfile , then there is a COPY keyword for this.
+  eg. `COPY requirements.txt .`
+  This will copy requirements.txt file into your present location , here . means present dir.
+
+* If you want to run any commands in your image , there is a RUN keyword for this , using this we can install the softwares
+  and can run any commands. To download the software in image , put the required software under RUN section.
+  eg. `RUN apt-get install vim` 
+  Here vim is the software to install . This will add vim software in your image.
+
+* If you want to add some other commands into RUN section then we use && \ symbol.
+  eg. 
+```
+  RUN apt-get install vim && \
+                rm -rf /ws
+```
+  In this we can run multiple commands.
+
+* So finally , Dockerfile will look like:
+```  
+  FROM quarticai/python:3.9.5-slim-base
+  COPY requirements.txt .
+  RUN RUN apt-get install -y vim
+```
+* Now Dockerfile is created , then we have to build this image, before building we have to login to Dockerhub , in which we have to 
+  push the image after building the image.
+```
+  docker login -u $DOCKER_USER -p $DOCKER_PASS 
+```
+  DOCKER_USER and DOCKER_PASS are env vars , through which we are passing the user name and password for Dockerhub.
+
+* Now we have to build the image. for this run the command:
+```
+  docker build -t <image_name> -f <file_name> .
+```
+  image_name is the name you want to give to the image and file_name is the name 
+  of your Dockerfile. and . is the present dir where Dockerfile is present.
+ 
+* Now image is build with the name you gave. so we can push the image.
+```
+  docker push <image_name> 
+```
+* Now the image is pushed to Dockerhub and we can use this image afterwards in Dockerfile as a base image.
+
+* let's say you gave the image name quarticai/graphene_django_extras:baseV1 , so now this image can be used as a base image for main   
+  Dockerfile because this base image already has the related software, that is needed in main Dockerfile. so update this image into Dockerfile. and update also in Jenkinsfile if needed.
+
+* To use this base image in main Dockerfile , just replace the previous base image with your newly created base image. let's say
+  you created quarticai/graphene_django_extras:baseV1 , so use this image in front of FROM section in Dockerfile.
