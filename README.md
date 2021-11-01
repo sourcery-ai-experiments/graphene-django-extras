@@ -692,7 +692,10 @@ You can use this shortcuts too:
 
 * If you want to add a file as requirements.txt file in Dockerfile , then there is a COPY keyword for this.
   eg. `COPY requirements.txt .`
-  This will copy requirements.txt file into your present location , here . means present dir.
+  This will copy requirements.txt file into your present location , here . means present dir. you need to only add required dependencies in requirements.txt and run `pip install -r requirements.txt` command in Dockerfile.
+```
+  RUN pip install -r requirements.txt 
+```
 
 * If you want to run any commands in your image , there is a RUN keyword for this , using this we can install the softwares
   and can run any commands. To download the software in image , put the required software under RUN section.
@@ -705,13 +708,14 @@ You can use this shortcuts too:
   RUN apt-get install vim && \
                 rm -rf /ws
 ```
-  In this we can run multiple commands.
+  In this way we can run multiple commands.
 
 * So finally , Dockerfile will look like:
 ```  
   FROM quarticai/python:3.9.5-slim-base
   COPY requirements.txt .
-  RUN RUN apt-get install -y vim
+  RUN  apt-get install -y vim &&\
+       pip install -r requirements.txt 
 ```
 * Now Dockerfile is created , then we have to build this image, before building we have to login to Dockerhub , in which we have to 
   push the image after building the image.
@@ -733,8 +737,10 @@ You can use this shortcuts too:
 ```
 * Now the image is pushed to Dockerhub and we can use this image afterwards in Dockerfile as a base image.
 
-* let's say you gave the image name quarticai/graphene_django_extras:baseV1 , so now this image can be used as a base image for main   
+* let's say you gave the image name quarticai/graphene_django_extras:baseV1 , so now this image can be used as a base image for main
   Dockerfile because this base image already has the related software, that is needed in main Dockerfile. so update this image into Dockerfile. and update also in Jenkinsfile if needed.
 
 * To use this base image in main Dockerfile , just replace the previous base image with your newly created base image. let's say
   you created quarticai/graphene_django_extras:baseV1 , so use this image in front of FROM section in Dockerfile.
+
+* Everytime you need to craete image , you can pick the base image from main Dockerfile and on the top of this install required software and requirements and create new base image. 
