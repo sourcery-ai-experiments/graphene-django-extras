@@ -69,8 +69,7 @@ def get_choices(choices):
     converted_names = []
     for value, help_text in choices:
         if isinstance(help_text, (tuple, list)):
-            for choice in get_choices(help_text):
-                yield choice
+            yield from get_choices(help_text)
         else:
             name = convert_choice_name(value)
             while name in converted_names:
@@ -217,8 +216,9 @@ def convert_django_field(field, registry=None, input_flag=None, nested_field=Fal
 def convert_field_to_string(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return String(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -239,8 +239,9 @@ def convert_field_to_id(field, registry=None, input_flag=None, nested_field=Fals
 def convert_field_to_uuid(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return UUID(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -249,20 +250,25 @@ def convert_field_to_uuid(field, registry=None, input_flag=None, nested_field=Fa
 @convert_django_field.register(models.SmallIntegerField)
 @convert_django_field.register(models.BigIntegerField)
 @convert_django_field.register(models.IntegerField)
-@convert_django_field.register(serializers.IntegerField) 
+@convert_django_field.register(serializers.IntegerField)
 def convert_field_to_int(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return Int(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
 @convert_django_field.register(models.BooleanField)
 @convert_django_field.register(serializers.BooleanField)
 def convert_field_to_boolean(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
-    required = is_required(
-        field) if not field_name in non_required_fields_list else False and input_flag == "create"
+    required = (
+        is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create"
+    )
+
     if required:
         return NonNull(Boolean, description=field.help_text or field.verbose_name)
     return Boolean(description=field.help_text)
@@ -274,8 +280,9 @@ def convert_field_to_nullboolean(
 ):
     return Boolean(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -283,8 +290,9 @@ def convert_field_to_nullboolean(
 def convert_binary_to_string(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return Binary(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -294,8 +302,9 @@ def convert_binary_to_string(field, registry=None, input_flag=None, nested_field
 def convert_field_to_float(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return Float(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -303,8 +312,9 @@ def convert_field_to_float(field, registry=None, input_flag=None, nested_field=F
 def convert_date_to_string(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return CustomDate(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -314,8 +324,9 @@ def convert_datetime_to_string(
 ):
     return CustomDateTime(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -323,8 +334,9 @@ def convert_datetime_to_string(
 def convert_time_to_string(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return CustomTime(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -340,7 +352,12 @@ def convert_onetoone_field_to_djangomodel(
         _type = registry.get_type_for_model(model, for_input=input_flag)
         if not _type:
             return
-        return Field(_type, required=is_required(field) if not field_name in non_required_fields_list else False and input_flag == "create")
+        return Field(
+            _type,
+            required=is_required(field)
+            if field_name not in non_required_fields_list
+            else False and input_flag == "create",
+        )
 
     return Dynamic(dynamic_type)
 
@@ -355,31 +372,33 @@ def convert_field_to_list_or_connection(
         if input_flag and not nested_field:
             return DjangoListField(
                 ID,
+                required=is_required(field)
+                if field_name not in non_required_fields_list
+                else False and input_flag == "create",
+                description=field.help_text or field.verbose_name,
+            )
+
+        _type = registry.get_type_for_model(model, for_input=input_flag)
+        if not _type:
+            return
+        elif input_flag and nested_field:
+            return DjangoListField(_type)
+        elif _type._meta.filter_fields or _type._meta.filterset_class:
+            return DjangoFilterListField(
+                _type,
                 required=is_required(
                     field) if not field_name in non_required_fields_list else False and input_flag == "create",
                 description=field.help_text or field.verbose_name,
+                filterset_class=_type._meta.filterset_class,
             )
         else:
-            _type = registry.get_type_for_model(model, for_input=input_flag)
-            if not _type:
-                return
-            elif input_flag and nested_field:
-                return DjangoListField(_type)
-            elif _type._meta.filter_fields or _type._meta.filterset_class:
-                return DjangoFilterListField(
-                    _type,
-                    required=is_required(
-                        field) if not field_name in non_required_fields_list else False and input_flag == "create",
-                    description=field.help_text or field.verbose_name,
-                    filterset_class=_type._meta.filterset_class,
-                )
-            else:
-                return DjangoListField(
-                    _type,
-                    required=is_required(
-                        field) if not field_name in non_required_fields_list else False and input_flag == "create",
-                    description=field.help_text or field.verbose_name,
-                )
+            return DjangoListField(
+                _type,
+                required=is_required(field)
+                if field_name not in non_required_fields_list
+                else False and input_flag == "create",
+                description=field.help_text or field.verbose_name,
+            )
 
     return Dynamic(dynamic_type)
 
@@ -395,24 +414,25 @@ def convert_many_rel_to_djangomodel(
     def dynamic_type():
         if input_flag and not nested_field:
             return DjangoListField(ID)
+        _type = registry.get_type_for_model(model, for_input=input_flag)
+        if not _type:
+            return
+        elif input_flag and nested_field:
+            return DjangoListField(_type)
+        elif _type._meta.filter_fields or _type._meta.filterset_class:
+            return DjangoFilterListField(
+                _type,
+                required=is_required(
+                    field) if not field_name in non_required_fields_list else False and input_flag == "create",
+                filterset_class=_type._meta.filterset_class,
+            )
         else:
-            _type = registry.get_type_for_model(model, for_input=input_flag)
-            if not _type:
-                return
-            elif input_flag and nested_field:
-                return DjangoListField(_type)
-            elif _type._meta.filter_fields or _type._meta.filterset_class:
-                return DjangoFilterListField(
-                    _type,
-                    required=is_required(
-                        field) if not field_name in non_required_fields_list else False and input_flag == "create",
-                    filterset_class=_type._meta.filterset_class,
-                )
-            else:
-                return DjangoListField(
-                    _type, required=is_required(
-                        field) if not field_name in non_required_fields_list else False and input_flag == "create"
-                )
+            return DjangoListField(
+                _type,
+                required=is_required(field)
+                if field_name not in non_required_fields_list
+                else False and input_flag == "create",
+            )
 
     return Dynamic(dynamic_type)
 
@@ -444,8 +464,9 @@ def convert_field_to_djangomodel(
         return Field(
             _type,
             description=field.help_text or field.verbose_name,
-            required=is_required(
-                field) if not field_name in non_required_fields_list else False and input_flag == "create",
+            required=is_required(field)
+            if field_name not in non_required_fields_list
+            else False and input_flag == "create",
         )
 
     return Dynamic(dynamic_type)
@@ -528,8 +549,9 @@ def convert_postgres_array_to_list(
     return List(
         base_type,
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -540,8 +562,9 @@ def convert_postgres_field_to_string(
 ):
     return CustomDict(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -555,8 +578,9 @@ def convert_postgres_range_to_string(
     return List(
         inner_type,
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 
@@ -564,8 +588,9 @@ def convert_postgres_range_to_string(
 def convert_field_to_string(field, registry=None, input_flag=None, nested_field=False, non_required_fields_list=[], field_name=None):
     return Upload(
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
 
 @convert_django_field.register(serializers.ListField)
@@ -575,6 +600,7 @@ def convert_list_to_string(
     return List(
         ID,
         description=field.help_text or field.verbose_name,
-        required=is_required(
-            field) if not field_name in non_required_fields_list else False and input_flag == "create",
+        required=is_required(field)
+        if field_name not in non_required_fields_list
+        else False and input_flag == "create",
     )
