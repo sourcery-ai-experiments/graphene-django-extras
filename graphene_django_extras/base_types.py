@@ -194,7 +194,6 @@ class CustomDateTime(graphene.Scalar):
             value = int(value)
         return datetime.datetime.fromtimestamp(value / 1000.0).replace(tzinfo=pytz.utc).strftime('%Y-%m-%d %H:%M:%S.%f%z')
 
-
 class CustomDict(graphene.Scalar):
 
     @staticmethod
