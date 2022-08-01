@@ -340,7 +340,7 @@ class DjangoSerializerMutation(ObjectType):
                 # Field is `id` because it is required and we don't know what caused the exception
                 # other than from the exception message
                 errors = [
-                    ErrorType(field="id", messages=[e.__repr__()])
+                    ErrorType(field="id", messages=[e.__str__()])
                 ]
                 # Atomic transaction support
                 cls._set_errors_flag_to_context(info)
