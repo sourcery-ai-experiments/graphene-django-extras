@@ -11,6 +11,5 @@ echo "$BRANCH_NAME"
 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
 export PATH="/root/.local/bin:$PATH"
 
-poetry add -f requirements.txt
-poetry install --no-root
+poetry install --no-root --no-dev --no-interaction --no-ansi < requirements.txt
 
