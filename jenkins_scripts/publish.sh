@@ -8,5 +8,6 @@ echo $PWD
 set -ex
 echo "$BRANCH_NAME"
 
-pip install -r requirements.txt
+poetry lock --no-update
+poetry install --no-root
 
