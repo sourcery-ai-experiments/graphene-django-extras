@@ -237,7 +237,7 @@ class DjangoSerializerMutation(ObjectType):
             cls._meta.model, info, type='delete', pk=pk
         ):
             try:
-                old_obj.delete(user = info.context.user)
+                old_obj.delete()
                 old_obj.id = pk
                 return cls.perform_mutate(old_obj, info)
             except RuntimeError as e:
