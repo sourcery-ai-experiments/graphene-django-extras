@@ -9,7 +9,7 @@ from django.contrib.contenttypes.fields import (
     GenericRel,
 )
 from django.db import models
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from graphene import (
     Field,
     ID,
