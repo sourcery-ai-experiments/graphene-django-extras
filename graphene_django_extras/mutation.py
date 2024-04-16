@@ -240,7 +240,7 @@ class DjangoSerializerMutation(ObjectType):
                 old_obj.delete()
                 old_obj.id = pk
                 return cls.perform_mutate(old_obj, info)
-            except RuntimeError as e:
+            except Exception as e:
                 errors = [
                     ErrorType(field="id", messages=[e.__str__()])
                 ]
